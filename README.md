@@ -10,6 +10,7 @@
 2. [🧪 Pretraining LLMs vs Finetuning LLMs](#-pretraining-llms-vs-finetuning-llms)
 3. [🤖 Understanding Transformers and LLMs](#-understanding-transformers-and-llms)
 4. [📚 The Evolution and Core Mechanics of GPT Models](#-the-evolution-and-core-mechanics-of-gpt-models)
+5. [🧱 Stages of Building a Large Language Model (LLM) from Scratch](#-stages-of-building-a-large-language-model-llm-from-scratch)
 
 ---
 
@@ -551,6 +552,130 @@ An intuitive walkthrough of how a Transformer translates text, e.g., English to 
 * Their scale enables **few-shot learning** and **emergent behaviour** across tasks.
 * While GPTs are currently **closed-source** in OpenAI’s offerings, **open-source alternatives** are rapidly closing the gap.
 * GPT’s power lies in its **auto-regressive, unsupervised training** and **self-attention mechanism**, which together allow surprisingly **versatile capabilities** without task-specific training.
+
+---
+
+## 🧱 Stages of Building a Large Language Model (LLM) from Scratch
+
+### 1. 🚧 Three-Stage Approach to LLM Development
+
+The development of an LLM follows a **structured 3-stage pipeline**, from raw data to production-level applications.
+
+---
+
+#### 🔹 **Stage 1: Building Blocks**
+
+> Focus: Preparing data, understanding architecture, and implementing attention mechanisms.
+
+##### 📌 Data Preparation & Sampling
+
+* **Tokenisation**: Split sentences into tokens (smallest units of meaning).
+* **Vector Embedding**: Convert words into vectors that reflect semantic meaning.
+
+  * E.g., “apple,” “banana,” and “orange” lie close in vector space.
+* **Positional Encoding**: Adds word order info, essential for capturing sentence structure.
+* **Batching Data**: Organizes data into manageable units for efficient training on the **next-word prediction** task.
+
+##### 🤖 Attention Mechanism
+
+* Core component of Transformer models.
+* Allows the model to focus on **relevant parts of the input**, not just immediate neighbors.
+* Supports understanding **context across the entire input sequence**.
+* Includes:
+
+  * **Multi-head attention**
+  * **Masked multi-head attention**
+  * **Input/output embeddings**
+
+##### 🏗️ LLM Architecture
+
+* Involves stacking multiple Transformer layers and attention heads.
+* GPT uses a **decoder-only architecture** (unlike original Transformer which had both encoder and decoder).
+
+---
+
+#### 🔹 **Stage 2: Pre-training – Building the Foundational Model**
+
+> Focus: Training on large-scale **unlabeled data**.
+
+##### ⚙️ Pre-training Process
+
+* Define **epochs**, compute **loss gradients**, and update **model parameters**.
+* Generate sample outputs at intervals to evaluate performance.
+
+##### 💾 Efficiency Tip
+
+* **Save and load weights** after pre-training to avoid full retraining.
+* Example: Load pre-trained weights from **OpenAI** into your model.
+
+##### 🎯 Objective
+
+* Train a **general-purpose foundational model** that understands language broadly.
+
+---
+
+#### 🔹 **Stage 3: Fine-tuning – Building Specific Applications**
+
+> Focus: Customizing the foundational model using **labeled data** for real-world tasks.
+
+##### 🔑 Key Points
+
+* Uses **task-specific labeled datasets** (e.g., spam vs. non-spam).
+* **Fine-tuned LLMs** perform significantly better on specific applications than only pre-trained ones.
+
+##### 🛠️ Example Applications
+
+1. **Email classifier** – Detect spam.
+2. **Chatbot** – Answer queries with contextual understanding.
+
+##### 🧠 Why Fine-Tuning?
+
+> "Nobody deploys the pre-trained model directly. You **fine-tune** it on your **specific labeled dataset** to make it production-ready."
+
+---
+
+### 2. 📚 Recap of Fundamental LLM Concepts
+
+#### 🔁 Two-Step Training Process
+
+| Step             | Description                                                    |
+| ---------------- | -------------------------------------------------------------- |
+| **Pre-training** | On large **unlabeled data**. Expensive, high-resource process. |
+| **Fine-tuning**  | On **specific labeled data**. Focused and efficient.           |
+
+#### 💥 Emergent Properties of LLMs
+
+LLMs trained for next-word prediction develop surprising abilities like:
+
+* Summarisation
+* Translation
+* Emotion recognition
+* Question answering
+* Multiple-choice generation
+
+> These capabilities are **not explicitly programmed** — they *emerge* from scale and architecture.
+
+---
+
+#### 🧠 Transformers and Attention: The Secret Sauce
+
+* The **attention mechanism** enables understanding of context and relationships between words.
+* GPT models are built on the **Transformer architecture**, but only use the **decoder** portion.
+
+| Model Type                      | Architecture      |
+| ------------------------------- | ----------------- |
+| **Original Transformer (2017)** | Encoder + Decoder |
+| **GPT (2018 onwards)**          | Decoder-only      |
+
+---
+
+### 3. 🔑 Key Insights & Takeaways
+
+* ✅ **Three-Stage Roadmap**: Data → Architecture → Pre-training → Fine-tuning.
+* ✅ **Fine-tuning is Essential**: Real-world applications require adapting the model.
+* ✅ **Emergent Abilities**: LLMs go far beyond basic next-word prediction.
+* ✅ **Pre-training is Expensive**: E.g., GPT-3 cost **\$4.6 million** to pre-train.
+* ✅ **Transformer + Attention = Power**: The architecture and attention mechanism underpin LLMs’ success.
 
 ---
 
