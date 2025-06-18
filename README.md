@@ -1,4 +1,7 @@
 # Large Language Models (LLM) From Scratch
+
+> _This content is inspired by Dr. Raj Dandekar’s YouTube playlist on Large Language Models. It will be updated as and when more topics are covered._
+
 ---
 
 ## 📑 Table of Contents
