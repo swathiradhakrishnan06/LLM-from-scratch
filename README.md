@@ -1,6 +1,16 @@
-# 📘 Large Language Models (LLM) Basics
+# Large Language Models (LLM) From Scratch
+---
 
-## 1. What Exactly is a Large Language Model (LLM)?
+## 📑 Table of Contents
+
+1. [📘 Large Language Models (LLM) Basics](#-large-language-models-llm-basics)
+2. [🧪 Pretraining LLMs vs Finetuning LLMs](#-pretraining-llms-vs-finetuning-llms)
+
+---
+
+## 📘 Large Language Models (LLM) Basics
+
+### 1. What Exactly is a Large Language Model (LLM)?
 
 At its simplest, **an LLM is a neural network designed to understand, generate, and respond to human-like text**. Key components include:
 
@@ -23,7 +33,7 @@ At its simplest, **an LLM is a neural network designed to understand, generate, 
 
 ---
 
-## 2. The Meaning of “Large” in LLM
+### 2. The Meaning of “Large” in LLM
 
 The "large" refers to the **number of parameters** in the model.
 
@@ -40,7 +50,7 @@ The "large" refers to the **number of parameters** in the model.
 
 ---
 
-## 3. The Meaning of “Language Model”
+### 3. The Meaning of “Language Model”
 
 A **language model** only deals with **textual data**, not images or videos.
 
@@ -53,14 +63,14 @@ LLMs are capable of performing various **Natural Language Processing (NLP)** tas
 
 ---
 
-## 4. Difference Between Modern LLMs and Earlier NLP Models
+### 4. Difference Between Modern LLMs and Earlier NLP Models
 
-### 🆚 Earlier NLP Models:
+#### 🆚 Earlier NLP Models:
 
 * **Task-Specific**: One model = one task (e.g., only translation or only sentiment analysis)
 * **Limited Capabilities**: Could not handle complex instructions like generating emails.
 
-### ✅ Modern LLMs:
+#### ✅ Modern LLMs:
 
 * **General-Purpose**: One model = many NLP tasks.
 * **Highly Capable**: Can write emails, generate articles, translate, etc.
@@ -68,7 +78,7 @@ LLMs are capable of performing various **Natural Language Processing (NLP)** tas
 
 ---
 
-## 5. The "Secret Sauce": Transformer Architecture
+### 5. The "Secret Sauce": Transformer Architecture
 
 The **Transformer** is the breakthrough architecture behind LLMs.
 
@@ -84,34 +94,34 @@ The **Transformer** is the breakthrough architecture behind LLMs.
 
 ---
 
-## 6. Understanding AI, ML, DL, LLM, and Generative AI Terminologies
+### 6. Understanding AI, ML, DL, LLM, and Generative AI Terminologies
 
-### 🤖 Artificial Intelligence (AI)
+#### 🤖 Artificial Intelligence (AI)
 
 > Any system that mimics human intelligence.
 > Includes rule-based systems (e.g., scripted chatbots).
 
-### 📊 Machine Learning (ML)
+#### 📊 Machine Learning (ML)
 
 > Subset of AI.
 > Learns and adapts based on data and user interactions. Includes neural networks, decision trees, etc.
 
-### 🧠 Deep Learning (DL)
+#### 🧠 Deep Learning (DL)
 
 > Subset of ML using **neural networks only**.
 > Examples: image classifiers, speech recognizers.
 
-### 📝 Large Language Models (LLMs)
+#### 📝 Large Language Models (LLMs)
 
 > Subset of DL for **text-based applications only**.
 > Do **not** handle images or videos.
 
-### 🧬 Generative AI
+#### 🧬 Generative AI
 
 > Combines DL + LLMs to **generate new content**.
 > Covers multiple media types: text, images, videos, sound, etc.
 
-### 📌 Summary Hierarchy:
+#### 📌 Summary Hierarchy:
 
 ```
 AI > ML > DL > LLM
@@ -120,31 +130,31 @@ Generative AI = DL + LLM + multimodal content generation
 
 ---
 
-## 7. Applications of LLMs
+### 7. Applications of LLMs
 
 LLMs are widely used across many domains. Key application areas:
 
-### ✍️ Content Creation
+#### ✍️ Content Creation
 
 * Poems, books, news articles, social media content.
 
-### 🤖 Chatbots & Virtual Assistants
+#### 🤖 Chatbots & Virtual Assistants
 
 * Used in banks, airlines, restaurants for automated customer support.
 
-### 🌐 Machine Translation
+#### 🌐 Machine Translation
 
 * Translates across languages, including regional ones.
 
-### 🆕 New Text Generation
+#### 🆕 New Text Generation
 
 * Generates original text content on any topic.
 
-### 😊 Sentiment Analysis
+#### 😊 Sentiment Analysis
 
 * Detects tone, mood, or hate speech from text.
 
-### 🛠️ Additional Tools Enabled by LLMs:
+#### 🛠️ Additional Tools Enabled by LLMs:
 
 * YouTube Script Generator
 * MCQ Generator
@@ -156,7 +166,7 @@ LLMs are widely used across many domains. Key application areas:
 
 ---
 
-## 📚 Acknowledgement
+### 📚 Acknowledgement
 
 > 🧠 *This content is inspired by Dr. Raj Dandekar’s YouTube playlist on Large Language Models.*
 > It has been adapted for educational purposes into a markdown-friendly format for easy reference and learning.
