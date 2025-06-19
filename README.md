@@ -11,6 +11,7 @@
 3. [🤖 Understanding Transformers and LLMs](#-understanding-transformers-and-llms)
 4. [📚 The Evolution and Core Mechanics of GPT Models](#-the-evolution-and-core-mechanics-of-gpt-models)
 5. [🧱 Stages of Building a Large Language Model (LLM) from Scratch](#-stages-of-building-a-large-language-model-llm-from-scratch)
+6. [🧩 Code an LLM Tokenizer from Scratch in Python](#-code-an-llm-tokenizer-from-scratch-in-python)
 
 ---
 
@@ -676,6 +677,226 @@ LLMs trained for next-word prediction develop surprising abilities like:
 * ✅ **Emergent Abilities**: LLMs go far beyond basic next-word prediction.
 * ✅ **Pre-training is Expensive**: E.g., GPT-3 cost **\$4.6 million** to pre-train.
 * ✅ **Transformer + Attention = Power**: The architecture and attention mechanism underpin LLMs’ success.
+
+---
+
+Perfect! Here's the **final, complete markdown version** of your topic **"Understanding LLM Tokenisation"**, now including **code snippets inline with the corresponding explanation**, as per the Python code from your uploaded notebook.
+
+---
+
+## 🧩 Code an LLM Tokenizer from Scratch in Python
+
+### 1. 🧠 Core Concepts of Tokenisation
+
+Tokenisation is the **first and essential step** in building a Large Language Model (LLM). It transforms human-readable text into machine-readable numerical format.
+
+> “Tokenisation is just the process of breaking down a sentence into individual words,”
+> but in LLMs, it goes further — handling punctuation, spacing, and unknown tokens robustly.
+
+---
+
+### 2. 🔄 Tokenisation Pipeline
+
+The tokenisation process can be broken into three steps:
+
+1. **Splitting text** into word and subword tokens
+2. **Converting tokens** into unique numerical token IDs
+3. **Encoding token IDs** into vector representations (*not covered in this lecture*)
+
+This section focuses on **steps 1 and 2**.
+
+---
+
+### 3. 🛠️ Building a Tokeniser from Scratch
+
+It's recommended to implement a basic tokeniser manually for clarity.
+
+#### Dataset:
+
+* *Edith Wharton’s* **“The Verdict”** is used
+* In real-world scenarios, LLMs are trained on **millions of documents**
+
+---
+
+#### ✂️ Step 1: Tokenising the Text
+
+##### ➤ Split by whitespace and punctuation
+
+```python
+import re
+
+def tokenize(text):
+    tokens = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+    tokens = [item.strip() for item in tokens if item.strip()]
+    return tokens
+```
+
+##### ✅ Handles:
+
+* Word splits
+* Punctuation as individual tokens
+* Removes redundant whitespace
+
+📌 Output on the full story: **4690 tokens**
+Example output:
+
+```python
+['This', 'is', 'an', 'example', '.', 'Right', '?']
+```
+
+---
+
+#### 🔢 Step 2: Creating a Vocabulary and Token IDs
+
+Each unique token is assigned a unique integer (token ID).
+
+```python
+tokens = tokenize(text)
+vocab = sorted(set(tokens))
+vocab_dict = {token: idx for idx, token in enumerate(vocab)}
+```
+
+📌 Result: **Vocabulary size = 1130**
+
+---
+
+### 4. 🧰 The Tokeniser Class (V1)
+
+This class encapsulates token-to-ID and ID-to-token mappings.
+
+```python
+class SimpleTokenizerV1:
+    def __init__(self, vocab_dict):
+        self.str_to_int = vocab_dict
+        self.int_to_str = {i: s for s, i in vocab_dict.items()}
+
+    def encode(self, text):
+        tokens = tokenize(text)
+        return [self.str_to_int[token] for token in tokens]
+
+    def decode(self, token_ids):
+        text = " ".join([self.int_to_str[i] for i in token_ids])
+        return re.sub(r'\s+([,.:;?!"()\'])', r'\1', text)
+```
+
+#### ➕ Features:
+
+* `encode()` = text → token IDs
+* `decode()` = token IDs → text (cleans punctuation spacing)
+
+---
+
+### 5. ❌ Problem: Unknown Tokens
+
+If a token is not in the vocabulary, the encoder will raise an error.
+
+> E.g., if `“hello”` didn’t exist in the training data, it cannot be mapped.
+
+---
+
+### 6. ✅ Enhanced Tokeniser (V2) with Special Tokens
+
+To solve unknown tokens, we add:
+
+| Token   | Purpose                        |
+| ------- | ------------------------------ |
+| `<unk>` | Represents unknown words       |
+| `<eot>` | Represents end of a text chunk |
+
+```python
+tokens.extend(["<unk>", "<eot>"])
+vocab_dict = {token: idx for idx, token in enumerate(sorted(set(tokens)))}
+```
+
+📌 Vocabulary size becomes **1132**
+
+---
+
+#### Updated Tokeniser Class with Fallback
+
+```python
+class SimpleTokenizerV2:
+    def __init__(self, vocab_dict):
+        self.str_to_int = vocab_dict
+        self.int_to_str = {i: s for s, i in vocab_dict.items()}
+
+    def encode(self, text):
+        tokens = tokenize(text)
+        return [self.str_to_int.get(token, self.str_to_int["<unk>"]) for token in tokens]
+
+    def decode(self, token_ids):
+        text = " ".join([self.int_to_str[i] for i in token_ids])
+        return re.sub(r'\s+([,.:;?!"()\'])', r'\1', text)
+```
+
+---
+
+### 7. 🏷️ Other Common Special Tokens
+
+| Token   | Purpose                                                       |
+| ------- | ------------------------------------------------------------- |
+| `<unk>` | Handles unknown/unseen words                                  |
+| `<eot>` | Marks end of a text segment (especially for multiple sources) |
+| `<bos>` | Beginning of sequence                                         |
+| `<eos>` | End of sequence (used in autoregressive generation)           |
+| `<pad>` | Used for padding during batching                              |
+
+> GPT models mainly use `<eot>`; they **do not use `<unk>` or `<pad>`**
+
+---
+
+### 8. ⚠️ Limitations of Word-Level Tokenisers
+
+* Treats each word and punctuation as a token
+* Doesn’t handle unknown words robustly
+* Can’t split rare/compound/complex words efficiently
+
+---
+
+### 9. ✂️ Introduction to Byte Pair Encoding (BPE)
+
+To overcome limitations, GPT and most LLMs use **Byte Pair Encoding (BPE)**.
+
+#### 🔹 BPE Features:
+
+* Breaks words into **subword units**
+* Reduces vocabulary size
+* Eliminates need for `<unk>` tokens
+
+Example:
+
+```text
+"playable" → ["play", "able"]
+"newword" → ["new", "word"]
+```
+
+---
+
+#### ✅ BPE in Action (via `tiktoken`)
+
+```python
+import tiktoken
+
+enc = tiktoken.get_encoding("gpt2")
+enc.encode("Hello, do you like tea?")
+# Output: [15496, 11, 703, 345, 1175, 30]
+```
+
+> This method ensures **out-of-vocab words are broken down** into known pieces.
+
+---
+
+### ✅ Summary
+
+* Tokenisation is a **foundational step** in LLMs.
+* It includes:
+
+  * Splitting text into tokens
+  * Mapping tokens to unique IDs
+* Special tokens like `<unk>`, `<eot>` are essential for robustness.
+* While basic tokenisers are helpful for learning, **real-world models use BPE**.
+
+> Next: A deep dive into **Byte Pair Encoding (BPE)** as used in GPT.
 
 ---
 
