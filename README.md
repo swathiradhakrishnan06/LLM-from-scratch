@@ -941,18 +941,37 @@ Each character is a token.
 - ✅ **Learns suffixes/prefixes** like `"isation"`, improving understanding
 
 ---
+### 3. ⚙️ Byte Pair Encoding (BPE) Algorithm
 
-### 3. ⚙️ How Byte Pair Encoding Works (The Algorithm)
-
-BPE originated as a **compression algorithm (1994)**. It was adapted for NLP tokenisation to iteratively merge the most frequent character pairs into subwords.
+BPE, originally a **data compression algorithm introduced in 1994**, has been adapted for tokenisation in LLMs. It addresses the limitations of word- and character-level tokenisation by iteratively merging the most common adjacent character or subword pairs.
 
 ---
 
-#### 🧱 Original Compression Logic:
+#### 🧱 Original Data Compression Algorithm
+
+**Process**:  
 - Find most frequent pair of adjacent bytes/characters
 - Replace them with a new symbol not in the data
 - Repeat until no pair occurs more than once
 
+**Example**:
+
+```
+
+Initial data:        aaabdaabac
+Most common pair:    aa (4 times)
+→ Replace 'aa' with 'z'
+
+New data:            zabdzaac
+Next common pair:    ab (2 times)
+→ Replace 'ab' with 'y'
+
+New data:            zydzac
+Stop:                No pair occurs more than once.
+
+````
+
+This illustrates how BPE compresses data by merging frequent byte pairs.
 ---
 
 #### ✍️ NLP BPE Example (From Lecture):
