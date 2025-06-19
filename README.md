@@ -945,8 +945,6 @@ Each character is a token.
 
 BPE, originally a **data compression algorithm introduced in 1994**, has been adapted for tokenisation in LLMs. It addresses the limitations of word- and character-level tokenisation by iteratively merging the most common adjacent character or subword pairs.
 
----
-
 #### 🧱 Original Data Compression Algorithm
 
 **Process**:  
