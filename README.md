@@ -12,6 +12,7 @@
 4. [📚 The Evolution and Core Mechanics of GPT Models](#-the-evolution-and-core-mechanics-of-gpt-models)
 5. [🧱 Stages of Building a Large Language Model (LLM) from Scratch](#-stages-of-building-a-large-language-model-llm-from-scratch)
 6. [🧩 Code an LLM Tokenizer from Scratch in Python](#-code-an-llm-tokenizer-from-scratch-in-python)
+7. [🧠 GPT Tokenisation using Byte Pair Encoding (BPE)](#-gpt-tokenisation-using-byte-pair-encoding-bpe)
 
 ---
 
@@ -872,20 +873,6 @@ Example:
 
 ---
 
-#### ✅ BPE in Action (via `tiktoken`)
-
-```python
-import tiktoken
-
-enc = tiktoken.get_encoding("gpt2")
-enc.encode("Hello, do you like tea?")
-# Output: [15496, 11, 703, 345, 1175, 30]
-```
-
-> This method ensures **out-of-vocab words are broken down** into known pieces.
-
----
-
 ### ✅ Summary
 
 * Tokenisation is a **foundational step** in LLMs.
@@ -897,6 +884,225 @@ enc.encode("Hello, do you like tea?")
 * While basic tokenisers are helpful for learning, **real-world models use BPE**.
 
 > Next: A deep dive into **Byte Pair Encoding (BPE)** as used in GPT.
+
+---
+## 🧠 GPT Tokenisation using Byte Pair Encoding (BPE)
+
+### 1. 🔎 Introduction to Tokenisation in LLMs
+
+Tokenisation is a fundamental step in preparing text data for LLMs. It converts raw text into smaller units called **tokens**, which are then transformed into **numerical token IDs** for processing by neural networks.
+
+#### 🔁 Types of Tokenisation Algorithms
+
+##### 🔹 Word-based Tokenisation
+Each word becomes a unique token.
+
+**Example**:  
+`"My hobby is playing cricket"` → `"My"`, `"hobby"`, `"is"`, `"playing"`, `"cricket"`
+
+**Drawbacks**:
+- ❌ **Out-of-Vocabulary (OOV)**: Unseen words cause errors.
+- ❌ **Large Vocabulary**: English has ~170K–200K words.
+- ❌ **Loss of Semantic Similarity**: Words like `"boy"` and `"boys"` are treated as totally distinct.
+
+---
+
+##### 🔹 Character-based Tokenisation
+Each character is a token.
+
+**Example**:  
+`"My hobby"` → `"M"`, `"y"`, `" "`, `"h"`, `"o"`, `"b"`, `"b"`, `"y"`
+
+**Advantages**:
+- ✅ No OOV issue — small, fixed vocabulary
+- ✅ Memory-efficient
+
+**Problems**:
+- ❌ Loses word-level meaning
+- ❌ Leads to long token sequences (e.g., `"dinosaur"` → 8 tokens)
+
+---
+
+### 2. 🧩 Subword-based Tokenisation: The Best of Both Worlds
+
+**Subword tokenisation**, such as **Byte Pair Encoding (BPE)**, overcomes the issues of word- and character-level methods.
+
+#### 🔑 Core Principles of Subword Tokenisation
+- **Keep common words whole**: `"boy"` remains `"boy"`
+- **Break rare or complex words into sub-parts**:  
+  `"boys"` → `"boy"`, `"s"`  
+  `"tokenization"` → `"token"`, `"ization"`
+
+#### ✅ Advantages of BPE
+- ✅ **Captures roots**: Groups `"token"`, `"tokens"`, `"tokenizing"`
+- ✅ **Handles OOV words** by breaking them into smaller known parts
+- ✅ **Manages vocabulary size** efficiently
+- ✅ **Shorter sequences** than character-based tokenisation
+- ✅ **Learns suffixes/prefixes** like `"isation"`, improving understanding
+
+---
+
+### 3. ⚙️ How Byte Pair Encoding Works (The Algorithm)
+
+BPE originated as a **compression algorithm (1994)**. It was adapted for NLP tokenisation to iteratively merge the most frequent character pairs into subwords.
+
+---
+
+#### 🧱 Original Compression Logic:
+- Find most frequent pair of adjacent bytes/characters
+- Replace them with a new symbol not in the data
+- Repeat until no pair occurs more than once
+
+---
+
+#### ✍️ NLP BPE Example (From Lecture):
+Using a sample dataset of word frequencies:
+
+```python
+{
+  "old": 7,
+  "older": 3,
+  "finest": 9,
+  "lowest": 4
+}
+````
+
+These frequency counts represent how often each word appears in the training corpus and directly influence which character pairs are merged first.
+
+---
+
+##### Step-by-Step:
+
+1. **Preprocess** each word by adding `/w` to mark word end:
+
+   ```
+   "old"     → ["o", "l", "d", "/w"]
+   "older"   → ["o", "l", "d", "e", "r", "/w"]
+   "finest"  → ["f", "i", "n", "e", "s", "t", "/w"]
+   "lowest"  → ["l", "o", "w", "e", "s", "t", "/w"]
+   ```
+
+2. **Frequency Table** (weighted by word occurrences):
+
+   * `"e"` appears in `"finest"` (9×) and `"lowest"` (4×) → total = **13**
+   * `"s"` appears in same → **13**
+   * `"e + s"` = **13 times**
+   * `"s + t"` = **13 times**
+   * `"est + /w"` = **13 times**
+   * `"o + l"` appears in `"old"` (7×) and `"older"` (3×) → total = **10**
+   * `"l + d"` also = **10 times**
+
+> These pair frequencies are not absolute character counts — they're based on how often the full word appears and how often the pair occurs within that word.
+
+---
+
+##### 3. **Iterative Merging**:
+
+Merges proceed from most frequent pairs to least:
+
+* `"e"` + `"s"` → `"es"`  (13 times)
+* `"es"` + `"t"` → `"est"`  (13 times)
+* `"est"` + `"/w"` → `"est/w"`  (13 times)
+* `"o"` + `"l"` → `"ol"`  (10 times)
+* `"ol"` + `"d"` → `"old"`  (10 times)
+
+---
+
+This approach learns that:
+
+* `"est"` is a common suffix in `"finest"` and `"lowest"`
+* `"old"` is a root shared by `"old"` and `"older"`
+
+These are now **merged subword tokens**, helping the model understand that these words share structure and meaning.
+
+---
+
+##### 4. **Stopping Criteria**:
+
+The merging process continues until:
+
+* A desired **token vocabulary size** is reached (e.g., \~**50,000–57,000** tokens for GPT-2/GPT-3)
+* Or no pair occurs more than once
+
+This controls the **granularity** and **capacity** of the model’s vocabulary.
+
+---
+
+### 4. 🛠️ Practical Implementation Using `tiktoken`
+
+OpenAI’s models like GPT-2 and GPT-3 use BPE via the open-source **`tiktoken`** library.
+
+#### 📦 Install
+```bash
+pip install tiktoken
+````
+
+#### 🔧 Initial Setup
+
+```python
+import tiktoken
+
+# Load GPT-2 compatible BPE tokenizer
+tokenizer = tiktoken.get_encoding("gpt2")
+```
+
+---
+
+#### ▶️ Example 1: Encode and Decode with BPE
+
+```python
+text = (
+    "Hello, do you like tea? <|endoftext|> In the sunlit terraces"
+    "of someunknownPlace."
+)
+
+integers = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
+print(integers)
+# Output: [15496, 11, 466, 345, 588, 8887, 30, 220, 50256, 554, 262, 4252, 18250, 8812]
+
+decoded_text = tokenizer.decode(integers)
+print(decoded_text)
+# Output: Hello, do you like tea? <|endoftext|> In the sunlit terracesof someunknownPlac
+```
+
+---
+
+#### ▶️ Example 2: Handling Unknown Words Gracefully
+
+```python
+encoded = tokenizer.encode("Akwirw ier")
+print(encoded)
+# Output: [33901, 86, 343, 86, 220, 959]
+
+decoded = tokenizer.decode(encoded)
+print(decoded)
+# Output: Akwirw ier
+```
+
+✅ Even made-up or rare words are broken into smaller known subwords — **no crash or error**.
+
+---
+
+#### 🧾 Vocabulary Size in GPT
+
+* GPT-2/GPT-3 use **50,257 tokens**.
+* Token ID `50256` = `<|endoftext|>`
+
+> This is much smaller and more efficient than full word-based vocabularies with over 170K entries.
+
+---
+
+### 5. ✅ Summary: Why BPE Works So Well
+
+Byte Pair Encoding offers a powerful, efficient solution for LLM tokenisation. It:
+
+* 🧠 Preserves **word meaning**
+* 💬 Identifies **roots and affixes**
+* 📉 Keeps **token sequences short**
+* 📦 Keeps **vocabulary size manageable**
+* 🧩 Handles **unknown words robustly**
+
+> BPE is the engine that powers tokenisation in GPT — making it efficient, flexible, and scalable.
 
 ---
 
