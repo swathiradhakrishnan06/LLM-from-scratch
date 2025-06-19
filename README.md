@@ -13,6 +13,7 @@
 5. [🧱 Stages of Building a Large Language Model (LLM) from Scratch](#-stages-of-building-a-large-language-model-llm-from-scratch)
 6. [🧩 Code an LLM Tokenizer from Scratch in Python](#-code-an-llm-tokenizer-from-scratch-in-python)
 7. [🧠 GPT Tokenisation using Byte Pair Encoding (BPE)](#-gpt-tokenisation-using-byte-pair-encoding-bpe)
+8. [🧩 Creating Input-Target Data Pairs for Large Language Models](#-creating-input-target-data-pairs-for-large-language-models)
 
 ---
 
@@ -1120,6 +1121,249 @@ Byte Pair Encoding offers a powerful, efficient solution for LLM tokenisation. I
 * 🧩 Handles **unknown words robustly**
 
 > BPE is the engine that powers tokenisation in GPT — making it efficient, flexible, and scalable.
+
+---
+
+## 🧩 Creating Input-Target Data Pairs for Large Language Models
+
+### 1. Introduction: The Data Pre-processing Stage for LLMs
+
+Creating input-target (or input-output) pairs is a **crucial step** in LLM training. This falls under the broader data pre-processing stage, which includes:
+
+- Tokenisation  
+- Input-target pair generation  
+- Vector embedding (next step)
+
+Unlike traditional ML tasks like image classification or regression with explicit labels, LLMs follow a **self-supervised, auto-regressive** approach:
+
+> “The sentence structure itself is used to determine what is the input and the output. We do not have to do any special labelling.”
+
+---
+
+### 2. Core Concept: Auto-regressive Next Word Prediction
+
+The **goal** is to train the model to predict the **next token** in a sequence.
+
+This is called:
+
+- **Auto-regressive**:  
+  > “The output of the first iteration becomes the input of the next iteration.”
+
+- **Self-supervised learning**:  
+  No labels needed — the data itself generates inputs and targets.
+
+---
+
+#### 2.1. Illustrative Example
+
+Given the sentence:
+
+> `"LLMs learn to predict one word at a time."`
+
+We generate input-target pairs like this:
+
+| Iteration | Input                        | Target    |
+|-----------|------------------------------|-----------|
+| 1         | `LLMs`                       | `learn`   |
+| 2         | `LLMs learn`                 | `to`      |
+| 3         | `LLMs learn to`              | `predict` |
+| 4         | `LLMs learn to predict`      | `one`     |
+
+In each step, the model **only sees previous tokens** to predict the next.
+
+---
+
+### 3. Key Concepts in Data Pair Creation
+
+#### 3.1. Context Length (max_length)
+
+This sets **how many tokens the model sees at once**. It’s a hyperparameter.
+
+- For example, a `max_length = 4` feeds 4 tokens to the model.
+- GPT-2/3 use context sizes of 256+.
+
+---
+
+#### 3.2. Multiple Prediction Tasks per Pair
+
+Each input-target pair represents **multiple predictions**.
+
+Example:
+
+```
+
+Input:  \[1, 2, 3, 4]
+Target: \[2, 3, 4, 5]
+
+````
+
+This gives:
+
+- [1] → 2  
+- [1, 2] → 3  
+- [1, 2, 3] → 4  
+- [1, 2, 3, 4] → 5  
+
+> “One input-output pair corresponds to the number of prediction tasks as set by the context size.”
+
+---
+
+#### 3.3. Tokenisation
+
+We first convert raw text into **token IDs** using BPE (Byte Pair Encoding).
+
+```python
+import tiktoken
+
+tokenizer = tiktoken.get_encoding("gpt2")
+
+with open("the-verdict.txt", "r", encoding="utf-8") as f:
+    raw_text = f.read()
+
+enc_text = tokenizer.encode(raw_text)
+print(len(enc_text))  # Output: 5145
+````
+
+This returns `5145` tokens from the short story — our working dataset.
+
+---
+
+### 4. Efficient Data Preparation with PyTorch
+
+To handle the dataset efficiently and allow **batched parallel training**, we use:
+
+* `GPTDatasetV1`: a custom `Dataset` class
+* `create_dataloader_v1`: a function that wraps it inside a `DataLoader`
+
+---
+
+#### 4.1. GPTDatasetV1: Sliding Window Dataset
+
+```python
+from torch.utils.data import Dataset, DataLoader
+import torch
+
+class GPTDatasetV1(Dataset):
+    def __init__(self, txt, tokenizer, max_length, stride):
+        self.input_ids = []
+        self.target_ids = []
+
+        # Tokenise full text once
+        token_ids = tokenizer.encode(txt, allowed_special={"<|endoftext|>"})
+
+        # Create input-target pairs using a sliding window
+        for i in range(0, len(token_ids) - max_length, stride):
+            input_chunk = token_ids[i:i + max_length]
+            target_chunk = token_ids[i + 1: i + max_length + 1]
+            self.input_ids.append(torch.tensor(input_chunk))
+            self.target_ids.append(torch.tensor(target_chunk))
+
+    def __len__(self):
+        return len(self.input_ids)
+
+    def __getitem__(self, idx):
+        return self.input_ids[idx], self.target_ids[idx]
+```
+
+✅ It handles:
+
+* Splitting the token stream using a **sliding window**
+* Shifting input by 1 to get target
+* Returning individual (input, target) tensors for each sample
+
+---
+
+#### 4.2. `create_dataloader_v1`: Efficient Batch Loader
+
+```python
+def create_dataloader_v1(txt, batch_size=4, max_length=256,
+                         stride=128, shuffle=True, drop_last=True,
+                         num_workers=0):
+
+    tokenizer = tiktoken.get_encoding("gpt2")
+    dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        num_workers=num_workers
+    )
+
+    return dataloader
+```
+
+* **shuffle**: Randomise input order
+* **drop\_last**: Drop last batch if it’s not full — avoids instability
+* **num\_workers**: CPU threads used to load batches in parallel
+
+---
+
+### 4.3. Stride and Batching
+
+* **Stride** controls overlap between samples
+
+  > “How much we slide when to create the next input-output batch”
+
+  * `stride = 1`: Each sample shifts by 1 → high overlap → risk of overfitting
+  * `stride = max_length`: Non-overlapping, memory efficient
+
+* **Batch Size** determines how many samples to train per step
+
+  > Small: less memory, noisy gradients
+  > Large: more stable, more compute
+
+---
+
+### 5. Output: Input and Target Tensors
+
+We now create batches of token IDs using our dataset and dataloader.
+
+```python
+dataloader = create_dataloader_v1(
+    raw_text, batch_size=8, max_length=4, stride=1, shuffle=False
+)
+
+data_iter = iter(dataloader)
+inputs, targets = next(data_iter)
+
+print("Inputs:\n", inputs)
+print("\nTargets:\n", targets)
+```
+
+**Sample Output**:
+
+```
+Inputs:
+ tensor([[   40,   367,  2885,  1464],
+         [ 1807,  3619,   402,   271],
+         [10899,  2138,   257,  7026],
+         [15632,   438,  2016,   257],
+         [  922,  5891,  1576,   438],
+         [  568,   340,   373,   645],
+         [ 1049,  5975,   284,   502],
+         [  284,  3285,   326,    11]])
+
+Targets:
+ tensor([[  367,  2885,  1464,  1807],
+         [ 3619,   402,   271, 10899],
+         [ 2138,   257,  7026, 15632],
+         [  438,  2016,   257,   922],
+         [ 5891,  1576,   438,   568],
+         [  340,   373,   645,  1049],
+         [ 5975,   284,   502,   284],
+         [ 3285,   326,    11,   287]])
+```
+
+* Each row is a **token ID sequence**
+* `targets` are shifted by 1 to match next-token prediction
+
+---
+
+### 6. Next Steps: Vector Embeddings
+
+After preparing input and target tensors, we pass these **token IDs into an embedding layer**, which maps them to high-dimensional dense vectors — the true input to the LLM.
 
 ---
 
