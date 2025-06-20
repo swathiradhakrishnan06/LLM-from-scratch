@@ -14,6 +14,7 @@
 6. [🧩 Code an LLM Tokenizer from Scratch in Python](#-code-an-llm-tokenizer-from-scratch-in-python)
 7. [🧠 GPT Tokenisation using Byte Pair Encoding (BPE)](#-gpt-tokenisation-using-byte-pair-encoding-bpe)
 8. [🧩 Creating Input-Target Data Pairs for Large Language Models](#-creating-input-target-data-pairs-for-large-language-models)
+9. [🔤 Token Embeddings in Large Language Models](#-token-embeddings-in-large-language-models)
 
 ---
 
@@ -1364,6 +1365,216 @@ Targets:
 ### 6. Next Steps: Vector Embeddings
 
 After preparing input and target tensors, we pass these **token IDs into an embedding layer**, which maps them to high-dimensional dense vectors — the true input to the LLM.
+
+---
+
+Here is your **fully updated and detailed section on Token Embeddings**, now integrating:
+
+* ✅ All your original explanations from the markdown version
+* ✅ Full Python code from the `Vector embedding.ipynb - Colab.pdf`
+* ✅ Additional insights and explanations you just provided
+* ✅ Markdown formatting for inclusion into your `README.md`
+
+---
+
+## 🔤 Token Embeddings in Large Language Models
+
+### 1. Introduction to Token Embeddings and Their Importance
+
+Token embeddings, also called **vector embeddings** or **word embeddings**, are the **numerical representations** of words that neural networks can understand and learn from.
+
+> “Computers can't understand words.”
+
+Words can be:
+- Assigned random integers (token IDs)
+- Represented as one-hot encodings
+
+But both methods **fail to capture the semantic relationship** between words like:
+
+- `cat` and `kitten`  
+- `king` and `queen`  
+- `dog` and `puppy`
+
+> “Words are beautiful — they carry meaning. Why not exploit the similarities between them?”
+
+---
+
+### 2. Conceptual Understanding: Vectors to Capture Meaning
+
+The breakthrough idea: represent **every word as a dense vector**, with real-valued elements that encode meaning.
+
+#### 🧠 Feature-Based Example
+
+| Feature          | Dog | Cat | Apple | Banana |
+|------------------|-----|-----|--------|--------|
+| has a tail       | 1   | 1   | 0      | 0      |
+| is edible        | 0   | 0   | 1      | 1      |
+| has four legs    | 1   | 1   | 0      | 0      |
+| makes sound      | 1   | 1   | 0      | 0      |
+| is a pet         | 1   | 1   | 0      | 0      |
+
+This makes:
+- **Dog** and **Cat** → similar vectors
+- **Apple** and **Banana** → similar
+- **Dog** and **Banana** → very different
+
+> “Vectors capture meaning. You can group similar words and distinguish different ones.”
+
+This mirrors how **CNNs use pixels** to detect spatial patterns — LLMs use vectors to detect semantic patterns.
+
+---
+
+### 3. Practical Demonstrations with Pretrained Embeddings
+
+Using the pretrained `word2vec-google-news-300` model (trained on ~100 billion words):
+
+```python
+# pip install gensim
+import gensim.downloader as api
+model = api.load("word2vec-google-news-300")
+word_vectors = model
+````
+
+Each word is represented as a **300-dimensional vector**.
+
+---
+
+#### 🔍 Word as Vector
+
+```python
+print(word_vectors['computer'])  # Dense vector
+print(word_vectors['cat'].shape)  # Output: (300,)
+```
+
+---
+
+#### 🧮 Vector Arithmetic: king + woman - man = queen
+
+```python
+print(word_vectors.most_similar(positive=['king', 'woman'], negative=['man'], topn=1))
+# [('queen', 0.7118)]
+```
+
+➡️ This shows embeddings capture **gendered relationships** between words.
+
+---
+
+#### 🔁 Similarity Scores
+
+```python
+print(word_vectors.similarity('woman', 'man'))     # 0.766
+print(word_vectors.similarity('king', 'queen'))    # 0.651
+print(word_vectors.similarity('uncle', 'aunt'))    # 0.764
+print(word_vectors.similarity('boy', 'girl'))      # 0.854
+print(word_vectors.similarity('nephew', 'niece'))  # 0.759
+print(word_vectors.similarity('paper', 'water'))   # 0.114
+```
+
+✅ Closer semantic pairs → higher scores
+❌ Distant words → lower scores
+
+---
+
+#### 📏 Vector Distance (Euclidean Norm)
+
+```python
+import numpy as np
+
+# Word pairs
+w1, w2 = 'man', 'woman'
+w3, w4 = 'semiconductor', 'earthworm'
+w5, w6 = 'nephew', 'niece'
+
+# Vector differences
+diff1 = model[w1] - model[w2]
+diff2 = model[w3] - model[w4]
+diff3 = model[w5] - model[w6]
+
+# Magnitudes
+print(np.linalg.norm(diff1))  # 1.73
+print(np.linalg.norm(diff2))  # 5.67
+print(np.linalg.norm(diff3))  # 1.96
+```
+
+> Smaller norm → more semantically similar.
+
+---
+
+### 4. Creating Token Embeddings for Large Language Models
+
+In LLMs like GPT, each token is embedded as a **dense vector** using an **embedding weight matrix**.
+
+#### 📐 Key Parameters
+
+| Parameter       | GPT-2 Example |
+| --------------- | ------------- |
+| Vocabulary Size | 50,257 tokens |
+| Embedding Dim   | 768           |
+
+The embedding matrix has shape: **\[vocab\_size × embedding\_dim]**, e.g., `50257 x 768`.
+
+---
+
+#### 🔧 Initialization and Training
+
+* At start: embeddings are **randomly initialized**
+* During training: updated via **backpropagation**
+
+> "They are optimized as part of the LLM training process."
+
+Unlike word2vec, GPT **learns its embeddings during model training**, not before.
+
+---
+
+### 5. Embedding Layer as a Lookup Table (in PyTorch)
+
+The `torch.nn.Embedding` layer provides efficient lookup from token IDs → vectors.
+
+```python
+import torch
+
+# Example input token IDs
+input_ids = torch.tensor([2, 3, 5, 1])
+
+# Embedding layer
+vocab_size = 6
+embedding_dim = 3
+
+torch.manual_seed(123)
+embedding_layer = torch.nn.Embedding(vocab_size, embedding_dim)
+
+# Lookup embeddings
+print(embedding_layer(input_ids))
+```
+
+This will return a matrix with 4 rows and 3 columns (1 for each token, 3 dims per vector).
+
+---
+
+#### ⚙️ Internally:
+
+Instead of using one-hot encoding + matrix multiplication (inefficient), `nn.Embedding` does **direct row retrieval**.
+
+> “Avoids many unnecessary multiplications with zero.”
+
+It’s both fast and memory-efficient.
+
+---
+
+### 6. Future Considerations: Positional Embeddings
+
+Token embeddings tell **what** a word is. But not **where** it occurs in a sentence.
+
+For example:
+
+* `"the cat sat on the mat"`
+* `"on the mat sat the cat"`
+
+Same words, different meaning due to position.
+
+> “The positioning of the sentence also matters a lot.”
+
+This is solved using **positional embeddings**, which will be covered in the next section.
 
 ---
 
