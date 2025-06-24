@@ -15,6 +15,7 @@
 7. [🧠 GPT Tokenisation using Byte Pair Encoding (BPE)](#-gpt-tokenisation-using-byte-pair-encoding-bpe)
 8. [🧩 Creating Input-Target Data Pairs for Large Language Models](#-creating-input-target-data-pairs-for-large-language-models)
 9. [🔤 Token Embeddings in Large Language Models](#-token-embeddings-in-large-language-models)
+10. [📍 Positional Embeddings in Large Language Models](#-positional-embeddings-in-large-language-models)
 
 ---
 
@@ -1575,6 +1576,186 @@ Same words, different meaning due to position.
 > “The positioning of the sentence also matters a lot.”
 
 This is solved using **positional embeddings**, which will be covered in the next section.
+
+---
+
+## 📍 Positional Embeddings in Large Language Models
+
+### 1. Introduction: The Need for Positional Encoding
+
+Before positional encoding is introduced, LLMs process input text through:
+
+- **Tokenisation**: Breaking raw text into tokens (e.g., words or subwords).
+- **Vocabulary & Token IDs**: Creating a vocabulary of all unique tokens and assigning each a unique ID.
+- **Token Embedding**: Mapping token IDs to high-dimensional vectors. These token embeddings capture the **semantic meaning** of words.
+
+> Example: The word *“cat”* will have the same embedding in both sentences:
+>
+> - “The cat sat on the mat”
+> - “On the mat the cat sat”
+
+However, these embeddings **ignore the position** of *“cat”* in the sentence. Thus, "we are essentially not exploiting the maximum information present in sentences." To solve this, LLMs use **positional embeddings** that encode the location of a token in a sequence.
+
+---
+
+### 2. Types of Positional Embeddings
+
+#### 2.1 Absolute Positional Embedding
+
+- Each position in the sequence has a dedicated **positional vector**.
+- These are **added** to the token embeddings.
+- Example: If “cat” appears at positions 2 and 5:
+  - Token Embedding = X (same)
+  - Positional Embedding = Y (for position 2) or Z (for position 5)
+  - Final Input = X+Y and X+Z
+- Embedding dimensionality must match: if token embedding = 256D, positional embedding must also be 256D.
+
+> ✅ **Used in GPT models** (GPT-2, GPT-3, GPT-4) and the **original Transformer** paper.
+
+#### 2.2 Relative Positional Embedding
+
+- Emphasizes **relative distance** between tokens (e.g., “how far apart” they are).
+- Better **generalization** to variable-length sequences.
+- Suitable for **long documents**, **language modeling**, and cases where fixed positions vary frequently.
+
+#### 2.3 Summary
+
+> "Both absolute and relative positional embeddings are beneficial... The choice between them depends on the application."
+
+---
+
+### 3. Implementation (Hands-On)
+
+#### 3.1 Token Embedding Layer
+
+```python
+import torch
+
+vocab_size = 50257  # BPE tokenizer vocabulary size (like GPT-2)
+output_dim = 256    # 256D embeddings
+token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+````
+
+This layer converts token IDs into their 256-dimensional vectors via simple lookup.
+
+---
+
+#### 3.2 Loading the Token IDs from DataLoader
+
+```python
+max_length = 4
+dataloader = create_dataloader_v1(raw_text, batch_size=8, max_length=max_length, stride=max_length, shuffle=False)
+data_iter = iter(dataloader)
+inputs, targets = next(data_iter)
+
+print("Token IDs:\n", inputs)
+print("\nInputs shape:\n", inputs.shape)
+```
+
+**Output:**
+
+```
+Token IDs:
+ tensor([[   40,   367,  2885,  1464],
+         [ 1807,  3619,   402,   271],
+         [10899,  2138,   257,  7026],
+         [15632,   438,  2016,   257],
+         [  922,  5891,  1576,   438],
+         [  568,   340,   373,   645],
+         [ 1049,  5975,   284,   502],
+         [  284,  3285,   326,    11]])
+
+Inputs shape:
+ torch.Size([8, 4])
+```
+
+Each batch has:
+
+* 8 text samples (rows)
+* Each sample has 4 token IDs (columns)
+
+---
+
+#### 3.3 Token Embedding Tensor
+
+```python
+token_embeddings = token_embedding_layer(inputs)
+print(token_embeddings.shape)
+```
+
+**Output:**
+
+```
+torch.Size([8, 4, 256])
+```
+
+This returns a 3D tensor where:
+
+* 8 = batch size
+* 4 = tokens per input (context length)
+* 256 = embedding dimension
+
+---
+
+#### 3.4 Positional Embedding Layer
+
+```python
+pos_embedding_layer = torch.nn.Embedding(max_length, output_dim)
+pos_embeddings = pos_embedding_layer(torch.arange(max_length))
+print(pos_embeddings.shape)
+```
+
+**Output:**
+
+```
+torch.Size([4, 256])
+```
+
+Each of the 4 positions in a sentence (0, 1, 2, 3) now has a 256-dimensional positional vector.
+
+---
+
+#### 3.5 Adding Positional and Token Embeddings
+
+```python
+input_embeddings = token_embeddings + pos_embeddings
+print(input_embeddings.shape)
+```
+
+**Output:**
+
+```
+torch.Size([8, 4, 256])
+```
+
+Here:
+
+* PyTorch’s **broadcasting** mechanism automatically duplicates the `pos_embeddings` (shape `[4, 256]`) across all 8 batches to match `[8, 4, 256]`.
+
+> 📌 These final `input_embeddings` are passed to the rest of the LLM pipeline.
+
+---
+
+### 4. Optimization of Positional Embeddings
+
+Unlike the original Transformer paper (which used fixed sinusoidal/cosine formulas), **GPT models** use **learned positional embeddings**:
+
+* **Random Initialization**: The embedding weights (both token and positional) are initialized randomly at the start of training.
+* **Backpropagation**: During training, these vectors are **updated and optimized**.
+* Goal: Learn positional vectors that maximize predictive accuracy.
+
+> "The values of the positional embedding vectors need to be optimized during the LLM's training process."
+
+---
+
+### 5. Key Takeaways
+
+* Token embeddings capture **semantic meaning**, but not order.
+* Positional embeddings capture **order**, enabling the LLM to understand sentence structure.
+* **Input Embedding = Token Embedding + Positional Embedding**
+* The final input shape for the model is `[batch_size, context_length, embedding_dim]` — here `[8, 4, 256]`.
+
+> Positional embeddings are vital — without them, LLMs cannot understand word order.
 
 ---
 
